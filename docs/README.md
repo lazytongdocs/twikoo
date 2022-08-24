@@ -135,3 +135,910 @@ yarn build # 编译 (dist/twikoo.all.min.js)
 ## 许可
 
 [![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Fimaegoo%2Ftwikoo.svg?type=large)](https://app.fossa.com/projects/git%2Bgithub.com%2Fimaegoo%2Ftwikoo?ref=badge_large)
+
+# 快速上手
+
+Twikoo 分为云函数和前端两部分，部署时请注意保持二者版本一致。
+
+* [云函数部署](#云函数部署)有 5 种方式，[一键部署](#一键部署)、[手动部署](#手动部署)、[命令行部署](#命令行部署)、[Vercel 部署](#vercel-部署)和[私有部署](#私有部署)。
+* [前端部署](#前端部署)有 2 种方式，如果您的网站主题支持 Twikoo，您只需在配置文件中指定 Twikoo 即可；如果您的网站主题不支持 Twikoo，您需要修改源码手动引入 Twikoo 的 js 文件并初始化。
+
+## 云函数部署
+
+| <div style="width: 6em">部署方式</div> | 描述 |
+| ---- | ---- |
+| [一键部署](#一键部署) | [ 不建议 ] 虽然方便，但是仅支持按量计费环境——也就是说，**一键部署的环境，当免费资源用尽后，将会产生费用**。且按量计费环境无法切换为包年包月环境。免费额度数据库读操作数只有 500 次 / 天，**无法支撑 Twikoo 的运行需求**。 |
+| [手动部署](#手动部署) | [ 建议 ] 手动部署到腾讯云云开发环境，在中国大陆访问速度较快。由于基础版 1 已从 0 元涨价至 6.9 元 / 月，需要付费购买环境才能部署。 |
+| [命令行部署](#命令行部署) | [ 不建议 ] 仅针对有 Node.js 经验的开发者。 |
+| [Vercel 部署](#vercel-部署) | [ 建议 ] 适用于想要免费部署的用户，在中国大陆访问速度较慢。 |
+| [私有部署](#私有部署) | [ 建议 ] 适用于有服务器的用户，需要自行申请 HTTPS 证书。 |
+
+### 一键部署
+
+1. 点击以下按钮将 Twikoo 一键部署到云开发<br>
+[![部署到云开发](https://main.qcloudimg.com/raw/67f5a389f1ac6f3b4d04c7256438e44f.svg)](https://console.cloud.tencent.com/tcb/env/index?action=CreateAndDeployCloudBaseProject&appUrl=https%3A%2F%2Fgithub.com%2Fimaegoo%2Ftwikoo&branch=main)
+2. 进入[环境-登录授权](https://console.cloud.tencent.com/tcb/env/login)，启用“匿名登录”
+3. 进入[环境-安全配置](https://console.cloud.tencent.com/tcb/env/safety)，将网站域名添加到“WEB安全域名”
+
+### 手动部署
+
+如果您打算部署到一个现有的云开发环境，请直接从第 3 步开始。
+
+1. 进入[云开发CloudBase](https://curl.qcloud.com/KnnJtUom)活动页面，滚动到“新用户专享”部分，选择适合的套餐，点击“立即购买”，按提示创建好环境。
+::: tip 提示
+* 推荐创建上海环境。如选择广州环境，需要在 `twikoo.init()` 时额外指定环境 `region: "ap-guangzhou"`
+* 环境名称自由填写
+* 推荐选择计费方式`包年包月`，套餐版本`基础版 1`，超出免费额度不会收费
+* 如果提示选择“应用模板”，请选择“空模板”
+:::
+2. 进入[云开发控制台](https://console.cloud.tencent.com/tcb/)<br>
+3. 进入[环境-登录授权](https://console.cloud.tencent.com/tcb/env/login)，启用“匿名登录”
+4. 进入[环境-安全配置](https://console.cloud.tencent.com/tcb/env/safety)，将网站域名添加到“WEB安全域名”
+5. 进入[环境-云函数](https://console.cloud.tencent.com/tcb/scf/index)，点击“新建云函数”
+6. 函数名称请填写：`twikoo`，创建方式请选择：`空白函数`，运行环境请选择：`Nodejs 10.15`，函数内存请选择：`128MB`，点击“下一步”
+7. 清空输入框中的示例代码，复制以下代码、粘贴到“函数代码”输入框中，点击“确定”
+``` js
+exports.main = require('twikoo-func').main
+```
+8. 创建完成后，点击“twikoo"进入云函数详情页，进入“函数代码”标签，点击“文件 - 新建文件”，输入 `package.json`，回车
+9. 复制以下代码、粘贴到代码框中，点击“保存并安装依赖”
+``` json
+{ "dependencies": { "twikoo-func": "1.6.7" } }
+```
+
+### 命令行部署
+
+::: warning 注意
+* 请确保您已经安装了 [Node.js](https://nodejs.org/en/download/)
+* 请将命令、代码中“您的环境id”替换为您自己的环境id
+* 第 7 步会弹出浏览器要求授权，需在有图形界面的系统下进行
+* 请勿在 Termux 下操作。虽然可以部署成功，但是使用时会报错 `[FUNCTIONS_EXECUTE_FAIL] Error: EACCES: permission denied, open '/var/user/index.js'`
+:::
+
+如果您打算部署到一个现有的云开发环境，请直接从第 3 步开始。
+
+1. 进入[云开发CloudBase](https://curl.qcloud.com/KnnJtUom)活动页面，滚动到“新用户专享”部分，选择适合的套餐（一般 0 元套餐即可），点击“立即购买”，按提示创建好环境。
+2. 进入[云开发控制台](https://console.cloud.tencent.com/tcb/)<br>
+3. 进入[环境-登录授权](https://console.cloud.tencent.com/tcb/env/login)，启用“匿名登录”
+4. 进入[环境-安全配置](https://console.cloud.tencent.com/tcb/env/safety)，将网站域名添加到“WEB安全域名”
+5. 克隆本仓库
+``` sh
+git clone https://github.com/imaegoo/twikoo.git # 或 git clone https://e.coding.net/imaegoo/twikoo/twikoo.git
+cd twikoo
+```
+> 如果您没有安装 Git，也可以从 [Release](https://github.com/imaegoo/twikoo/releases) 页面下载最新的 Source code<br>
+> 如果您所在的地区访问 Github 速度慢，也可以尝试另一个仓库地址：[https://imaegoo.coding.net/public/twikoo/twikoo/git](https://imaegoo.coding.net/public/twikoo/twikoo/git)
+6. 安装依赖项
+``` sh
+npm install -g yarn # 已安装 yarn 可以跳过此步
+yarn install
+```
+7. 授权云开发环境（此命令会弹出浏览器要求授权，需在有图形界面的系统下进行）
+``` sh
+yarn run login
+```
+8. 自动部署
+``` sh
+yarn deploy -e 您的环境id
+```
+
+### Vercel 部署
+
+::: warning 注意
+Vercel 部署的环境需配合 1.4.0 以上版本的 twikoo.js 使用
+:::
+
+[查看视频教程](https://www.bilibili.com/video/BV1Fh411e7ZH)
+
+1. 申请 [MongoDB](https://www.mongodb.com/cloud/atlas/register) 账号
+2. 创建免费 MongoDB 数据库，区域推荐选择 `AWS / N. Virginia (us-east-1)`
+3. 在 Clusters 页面点击 CONNECT，按步骤设置允许所有 IP 地址的连接（[为什么？](https://vercel.com/support/articles/how-to-allowlist-deployment-ip-address)），创建数据库用户，并记录数据库连接字符串，请将连接字符串中的 `<password>` 修改为数据库密码
+4. 申请 [Vercel](https://vercel.com/signup) 账号
+5. 点击以下按钮将 Twikoo 一键部署到 Vercel<br>
+[![](https://vercel.com/button)](https://vercel.com/import/project?template=https://github.com/imaegoo/twikoo/tree/main/src/server/vercel-min)
+6. 进入 Settings - Environment Variables，添加环境变量 `MONGODB_URI`，值为第 3 步的数据库连接字符串
+7. 进入 Deployments , 然后在任意一项后面点击更多（三个点） , 然后点击Redeploy , 最后点击下面的Redeploy
+8. 进入 Overview，点击 Domains 下方的链接，如果环境配置正确，可以看到 “Twikoo 云函数运行正常” 的提示
+9. Vercel Domains（包含 `https://` 前缀，例如 `https://xxx.vercel.app`）即为您的环境 id
+
+### 私有部署
+
+::: warning 注意
+私有部署的环境需配合 1.6.0 或以上版本的 twikoo.js 使用
+:::
+
+1. 服务端下载安装 [Node.js](https://nodejs.org/zh-cn/)
+2. 安装 Twikoo server: `npm i -g tkserver`
+3. 根据需要配置环境变量
+
+| 名称 | 描述 | 默认值 |
+| ---- | ---- | ---- |
+| `TWIKOO_DATA` | 数据库存储路径 | `./data` |
+| `TWIKOO_PORT` | 端口号 | `8080` |
+| `TWIKOO_THROTTLE` | IP 请求限流，当同一 IP 短时间内请求次数超过阈值将对该 IP 返回错误 | `250` |
+
+4. 启动 Twikoo server: `tkserver`
+5. 访问 `http://服务端IP:8080`
+6. 若能正常访问，服务端地址（包含 `http://` 和端口号，例如 `http://12.34.56.78:8080`）即为您的环境 id
+
+::: tip 提示
+1. Linux 服务器可以用 `nohup tkserver >> tkserver.log 2>&1 &` 命令后台启动
+2. 强烈建议配置前置 nginx 服务器并配置 https 证书
+3. 数据在服务器上，请注意定期备份数据
+:::
+
+### 私有部署 (Docker)
+
+```
+docker run --name twikoo -e TWIKOO_THROTTLE=1000 -p 8080:8080 -v ${PWD}/data:/app/data -d imaegoo/twikoo
+```
+
+## 前端部署
+
+### 在 Hexo 中使用
+
+#### 在 [Hexo Butterfly](https://github.com/jerryc127/hexo-theme-butterfly) 主题使用
+
+请参考 [Butterfly 安裝文檔(四) 主題配置-2](https://butterfly.js.org/posts/ceeb73f/#%E8%A9%95%E8%AB%96) 进行配置
+
+#### 在 [Hexo Keep](https://github.com/XPoet/hexo-theme-keep) 主题使用
+
+请参考 [hexo-theme-keep/_config.yml](https://github.com/XPoet/hexo-theme-keep/blob/master/_config.yml) 进行配置
+
+#### 在 [Hexo Volantis](https://github.com/volantis-x/hexo-theme-volantis) 主题使用
+
+请参考 [hexo-theme-volantis/_config.yml](https://github.com/volantis-x/hexo-theme-volantis/blob/master/_config.yml) 进行配置
+
+#### 在 [Hexo Ayer](https://github.com/Shen-Yu/hexo-theme-ayer) 主题使用
+
+请参考 [hexo-theme-ayer/_config.yml](https://github.com/Shen-Yu/hexo-theme-ayer/blob/master/_config.yml) 进行配置
+
+#### 在 [Hexo NexT](https://github.com/next-theme/hexo-theme-next) 主题使用
+
+**暂不支持 NexT 8 以下的版本**，请先升级到 NexT 8。然后在 Hexo 项目根目录执行
+
+``` sh
+# For NexT version >= 8.0.0 && < 8.4.0
+npm install hexo-next-twikoo@1.0.0
+# For NexT version >= 8.4.0
+npm install hexo-next-twikoo@1.0.3
+```
+
+然后在配置中添加
+
+``` yml
+twikoo:
+  enable: true
+  visitor: true
+  envId: xxxxxxxxxxxxxxx # 腾讯云环境填 envId；Vercel 环境填地址（https://xxx.vercel.app）
+  # region: ap-guangzhou # 环境地域，默认为 ap-shanghai，腾讯云环境填 ap-shanghai 或 ap-guangzhou；Vercel 环境不填
+```
+
+#### 在 [Hexo Matery](https://github.com/blinkfox/hexo-theme-matery) 主题使用
+
+请参考 [hexo-theme-matery/_config.yml](https://github.com/blinkfox/hexo-theme-matery/blob/develop/_config.yml) 进行配置
+
+#### 在 [Hexo Icarus](https://github.com/ppoffice/hexo-theme-icarus) 主题使用
+
+请参考 [基于腾讯云，给你的 Icarus 博客配上 Twikoo 评论系统](https://www.anzifan.com/post/icarus_to_candy_2/) by 异次元de机智君💯
+
+#### 在 [Hexo MengD(萌典)](https://github.com/lete114/hexo-theme-MengD) 主题使用
+
+请参考 [hexo-theme-MengD/_config.yml](https://github.com/lete114/hexo-theme-MengD/blob/master/_config.yml) 进行配置
+
+#### 在 [hexo-theme-fluid](https://github.com/fluid-dev/hexo-theme-fluid) 主题使用
+
+请参考 [配置指南-评论](https://hexo.fluid-dev.com/docs/guide/#%E8%AF%84%E8%AE%BA) 进行配置
+
+#### 在 [hexo-theme-cards](https://github.com/ChrAlpha/hexo-theme-cards) 主题使用
+
+请参考 [hexo-theme-cards/_config.yml](https://github.com/ChrAlpha/hexo-theme-cards/blob/master/_config.yml) 进行配置
+
+#### 在 [maupassant-hexo](https://github.com/tufu9441/maupassant-hexo) 主题使用
+
+请参考 [maupassant-hexo/_config.yml](https://github.com/tufu9441/maupassant-hexo/blob/master/_config.yml) 进行配置
+
+### 通过 CDN 引入
+
+::: tip 提示
+如果您使用的博客主题不支持 Twikoo，并且您不知道如何引入 Twikoo，您可以[在 Github 提交适配请求](https://github.com/imaegoo/twikoo/issues/new)
+:::
+
+``` html
+<div id="tcomment"></div>
+<script src="https://cdn.staticfile.org/twikoo/1.6.7/twikoo.all.min.js"></script>
+<script>
+twikoo.init({
+  envId: '您的环境id', // 腾讯云环境填 envId；Vercel 环境填地址（https://xxx.vercel.app）
+  el: '#tcomment', // 容器元素
+  // region: 'ap-guangzhou', // 环境地域，默认为 ap-shanghai，腾讯云环境填 ap-shanghai 或 ap-guangzhou；Vercel 环境不填
+  // path: location.pathname, // 用于区分不同文章的自定义 js 路径，如果您的文章路径不是 location.pathname，需传此参数
+  // lang: 'zh-CN', // 用于手动设定评论区语言，支持的语言列表 https://github.com/imaegoo/twikoo/blob/main/src/client/utils/i18n/index.js
+})
+</script>
+```
+
+> 建议使用 CDN 引入 Twikoo 的用户在链接地址上锁定版本，以免将来 Twikoo 升级时受到非兼容性更新的影响。
+
+#### 更换 CDN 镜像
+
+如果遇到默认 CDN 加载速度缓慢，可更换其他 CDN 镜像。以下为可供选择的公共 CDN，其中一些 CDN 可能需要数天时间同步最新版本：
+
+* `https://cdn.staticfile.org/twikoo/1.6.7/twikoo.all.min.js`
+* `https://lib.baomitu.com/twikoo/1.6.7/twikoo.all.min.js`
+* `https://cdn.bootcdn.net/ajax/libs/twikoo/1.6.7/twikoo.all.min.js`
+* `https://cdn.jsdelivr.net/npm/twikoo@1.6.7/dist/twikoo.all.min.js`
+
+## 开启管理面板（腾讯云环境）
+
+1. 进入[环境-登录授权](https://console.cloud.tencent.com/tcb/env/login)，点击“自定义登录”右边的“私钥下载”，下载私钥文件
+2. 用文本编辑器打开私钥文件，复制全部内容
+3. 点击评论窗口的“小齿轮”图标，粘贴私钥文件内容，并设置管理员密码
+
+配置好登录私钥之后无需留存私钥文件，请勿再次下载登录私钥，否则会导致之前配置的登录私钥失效。
+
+## 开启管理面板（Vercel 环境）
+
+点击评论窗口的“小齿轮”图标，设置管理员密码
+
+## 版本更新
+
+不同部署方式的更新方式也不同，请对号入座。更新部署成功后，请不要忘记同时更新前端的 Twikoo CDN 地址中的 `x.x.x` 数字版本号，使之与云函数版本号相同，然后部署网站。
+
+### 针对一键部署的更新方式
+
+登录[环境-我的应用](https://console.cloud.tencent.com/tcb/apps/index)，输入
+
+* 来源地址：`https://github.com/imaegoo/twikoo/tree/main`
+* 部署分支：`main`
+
+应用目录无需填写，点击“确定”，部署完成。
+
+### 针对手动部署的更新方式
+
+登录[环境-云函数](https://console.cloud.tencent.com/tcb/scf/index)，点击 twikoo，点击函数代码，打开 `package.json` 文件，将 `"twikoo-func": "x.x.x"` 其中的版本号修改为最新版本号，点击“保存并安装依赖”即可。
+
+::: tip 提示
+如果您的云函数是 1.0.0 之前的版本，因为 1.0.0 版本修改了部署步骤，请先参考[手动部署](#手动部署)，从第 5 步开始，重新创建云函数，再按照此步骤更新。
+
+如果升级后出现无法读取评论列表，云函数报错，请在函数编辑页面，删除 `node_modules` 目录（删除需要半分钟左右，请耐心等待删除完成），再点击保存并安装依赖。如果仍然不能解决，请删除并重新创建 Twikoo 云函数。
+:::
+
+### 针对命令行部署的更新方式
+
+进入 Twikoo 源码目录，执行以下命令更新现有的云函数
+
+``` sh
+yarn deploy -e 您的环境id
+```
+
+### 针对 Vercel 部署的更新方式
+
+1. 进入 [Vercel 仪表板](https://vercel.com/dashboard) - twikoo - Settings - Git
+2. 点击 Connected Git Repository 下方的仓库地址
+3. 打开 package.json，点击编辑
+4. 将 `"twikoo-vercel": "x.x.x"` 其中的版本号修改为最新版本号。点击 Commit changes
+5. 部署会自动触发，可以回到 [Vercel 仪表板](https://vercel.com/dashboard)，查看部署状态
+
+### 针对私有部署的更新方式
+
+1. 停止旧版本 `kill $(ps -ef | grep tkserver | grep -v 'grep' | awk '{print $2}')`
+2. 拉取新版本 `npm i -g tkserver@latest`
+3. 启动新版本 `nohup tkserver >> tkserver.log 2>&1 &`
+
+### 针对私有部署 (Docker) 的更新方式
+
+1. 拉取新版本 `docker pull imaegoo/twikoo`
+2. 停止旧版本容器 `docker stop twikoo`
+3. 删除旧版本容器 `docker rm twikoo`
+4. [启动新版本容器](#私有部署-Docker)
+
+### 自动更新
+
+考虑到可用性和安全性问题，Twikoo 没有实现自动更新，也没有计划实现自动更新。如果您希望实现自动更新，可以参考 MHuiG 基于 Github 工作流的 [twikoo-update](https://github.com/MHuiG/twikoo-update) 的实现方式。
+#  QQ私有化部署文档
+## 1. 下载go-cq
+前往[go-cqhttp release](https://github.com/Mrs4s/go-cqhttp)下载对应系统版本。
+## 2. 配置服务
+解压
+
+> Windows下请使用自己熟悉的解压软件自行解压
+
+> Linux下在命令行中输入tar -xzvf [文件名]
+使用
+
+**Windows 标准方法**
+
+双击，根据提示生成运行脚本go-cqhttp_*.exe
+
+`[WARNING]: 尝试加载配置文件 config.yml 失败: 文件不存在
+[INFO]: 默认配置文件已生成,请编辑 config.yml 后重启程序.`
+
+配置文件请参考下方config.yml
+
+
+config.yml配置好后 再次双击运行脚本
+
+`[INFO]: 登录成功 欢迎使用: balabala`
+
+如出现需要认证的信息, 请自行认证设备。
+
+此时, 基础配置完成
+
+**Linux 标准方法**
+
+
+通过 SSH 连接到服务器
+
+cd到解压目录
+
+输入 , 运行 `./go-cqhttp`
+
+
+`[WARNING]: 尝试加载配置文件 config.yml 失败: 文件不存在
+[INFO]: 默认配置文件已生成,请编辑 config.yml 后重启程序.`
+
+
+**配置config.yml**
+
+```yaml
+
+# go-cqhttp 默认配置文件
+
+account: # 账号相关
+  uin:  # QQ账号
+  password: '' # 密码为空时使用扫码登录
+  encrypt: false  # 是否开启密码加密
+  status: 0      # 在线状态 请参考 https://docs.go-cqhttp.org/guide/config.html#在线状态
+  relogin: # 重连设置
+    delay: 3   # 首次重连延迟, 单位秒
+    interval: 3   # 重连间隔
+    max-times: 0  # 最大重连次数, 0为无限制
+
+  # 是否使用服务器下发的新地址进行重连
+  # 注意, 此设置可能导致在海外服务器上连接情况更差
+  use-sso-address: true
+
+heartbeat:
+  # 心跳频率, 单位秒
+  # -1 为关闭心跳
+  interval: 5
+
+message:
+  # 上报数据类型
+  # 可选: string,array
+  post-format: string
+  # 是否忽略无效的CQ码, 如果为假将原样发送
+  ignore-invalid-cqcode: false
+  # 是否强制分片发送消息
+  # 分片发送将会带来更快的速度
+  # 但是兼容性会有些问题
+  force-fragment: false
+  # 是否将url分片发送
+  fix-url: false
+  # 下载图片等请求网络代理
+  proxy-rewrite: ''
+  # 是否上报自身消息
+  report-self-message: false
+  # 移除服务端的Reply附带的At
+  remove-reply-at: false
+  # 为Reply附加更多信息
+  extra-reply-data: false
+
+output:
+  # 日志等级 trace,debug,info,warn,error
+  log-level: warn
+  # 是否启用 DEBUG
+  debug: false # 开启调试模式
+
+# 默认中间件锚点
+default-middlewares: &default
+  # 访问密钥, 强烈推荐在公网的服务器设置
+  access-token: ''
+  # 事件过滤器文件目录
+  filter: ''
+  # API限速设置
+  # 该设置为全局生效
+  # 原 cqhttp 虽然启用了 rate_limit 后缀, 但是基本没插件适配
+  # 目前该限速设置为令牌桶算法, 请参考:
+  # https://baike.baidu.com/item/%E4%BB%A4%E7%89%8C%E6%A1%B6%E7%AE%97%E6%B3%95/6597000?fr=aladdin
+  rate-limit:
+    enabled: true # 是否启用限速
+    frequency: 1  # 令牌回复频率, 单位秒
+    bucket: 1     # 令牌桶大小
+
+database: # 数据库相关设置
+  leveldb:
+    # 是否启用内置leveldb数据库
+    # 启用将会增加10-20MB的内存占用和一定的磁盘空间
+    # 关闭将无法使用 撤回 回复 get_msg 等上下文相关功能
+    enable: true
+
+# 连接服务列表
+servers:
+  # 添加方式，同一连接方式可添加多个，具体配置说明请查看文档
+  #- http: # http 通信
+  #- ws:   # 正向 Websocket
+  #- ws-reverse: # 反向 Websocket
+  #- pprof: #性能分析服务器
+  # HTTP 通信设置
+  - http:
+      # 服务端监听地址
+      host: 127.0.0.1
+      # 服务端监听端口
+      port: 5700
+      # 反向HTTP超时时间, 单位秒
+      # 最小值为5，小于5将会忽略本项设置
+      timeout: 5
+      middlewares:
+        <<: *default # 引用默认中间件
+      # 反向HTTP POST地址列表
+      post:
+      #- url: '' # 地址
+      #  secret: ''           # 密钥
+      #- url: 127.0.0.1:5701 # 地址
+      #  secret: ''          # 密钥
+ 
+      
+
+
+
+```
+
+
+再次运行`./go-cqhttp`
+
+
+`[INFO]: 登录成功 欢迎使用: balabala`
+
+如出现需要认证的信息, 请自行认证设备。
+
+此时, 基础配置完成
+
+## 注意:将你配置的端口号在防火墙里面放行或者使用反向代理将你设置的端口绑定到域名
+## 注意:公网使用一定要配置token
+
+## 3. twikoo配置
+在twikoo中QQ私有化API配置项填写如下内容
+
+QQ号
+`http://你的IP地址：端口号（或者域名）/send_private_msg?user_id=QQ号?token=你配置的token`
+
+QQ群
+`http://你的IP地址：端口号（或者域名）/send_group_msg?token=你配置的token?group_id=群号`
+
+配置完成
+
+# 相关文档
+
+* [在Hexo的Butterfly主题使用Twikoo评论配置及更新教程](https://blog.zhheo.com/p/2e6bbbd0.html) by 张洪 Heo
+* [Typecho 到 Twikoo 迁移脚本](https://github.com/Android-KitKat/twikoo-import-tools-typecho) by Android-KitKat
+* [Hexo 博客配置 twikoo 评论系统，并调用最新评论](https://www.heson10.com/posts/3217.html) by Heson
+* [基于腾讯云，给你的 Icarus 博客配上 Twikoo 评论系统](https://www.anzifan.com/post/icarus_to_candy_2/) by 异次元de机智君💯
+* [Twikoo 多个页面共用一个评论区](https://www.imaegoo.com/2021/twikoo-path/) by iMaeGoo
+* [集成 Twikoo 与 lightGallery 插件，实现评论图片的点击放大](https://www.imaegoo.com/2021/twikoo-lightgallery/) by iMaeGoo
+* [Twikoo 评论数据导出教程](https://www.imaegoo.com/2022/twikoo-data-export/) by iMaeGoo
+
+# 常见问题
+
+## 如何修改头像？
+
+请前往 [https://cravatar.cn](https://cravatar.cn) 通过邮箱注册并设定头像，评论时，请留下相同的邮箱。
+
+访客还可以通过输入数字 QQ 邮箱地址，使用 QQ 头像发表评论。
+
+## 如何修改、重置管理员密码？
+
+腾讯云请前往[云开发控制台](https://console.cloud.tencent.com/tcb/database/collection/config)，Vercel 请前往 MongoDB，私有部署请直接编辑 `data/db.json.1`，编辑配置，删除 config.ADMIN_PASS 配置项，然后前往 Twikoo 管理面板重新设置密码。
+
+## 如何获得管理面板的私钥文件？
+
+1. 进入[环境-登录授权](https://console.cloud.tencent.com/tcb/env/login)，点击“自定义登录”右边的“私钥下载”，下载私钥文件
+2. 用文本编辑器打开私钥文件，复制全部内容
+3. 点击评论窗口的“小齿轮”图标，粘贴私钥文件内容，并设置管理员密码
+
+## 如何开启文章访问量统计？
+
+您可以在需要展示文章访问量的地方添加：
+
+``` html
+<span id="twikoo_visitors">0</span>
+```
+
+来展示访问量。暂不支持全站访问量统计。
+
+## 如何启用 Katex 支持？
+
+Twikoo 支持 Katex 公式，但为了限制 Twikoo 的包大小，Twikoo 没有内置完整的 Katex，您需要[在页面中额外加载 katex.js](https://katex.org/docs/browser.html)。
+
+``` html
+<head>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.12.0/dist/katex.min.css" integrity="sha384-AfEj0r4/OFrOo5t7NnNe46zW/tFgW6x/bCJG8FqQCEo3+Aro6EYUG4+cU+KJWu/X" crossorigin="anonymous">
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.12.0/dist/katex.min.js" integrity="sha384-g7c+Jr9ZivxKLnZTDUhnkOnsh30B4H0rpLUpJ4jAIKs4fnJI+sEnkvrMWph2EDg4" crossorigin="anonymous"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.12.0/dist/contrib/auto-render.min.js" integrity="sha384-mll67QQFJfxn0IYznZYonOWZ644AWYC+Pt2cHqMaRhXVrursRwvLnLaebdGIlYNa" crossorigin="anonymous"></script>
+</head>
+```
+
+载入后，您可以发送 `$$c = \pm\sqrt{a^2 + b^2}$$` 测试效果。
+
+![katex](./static/katex.png)
+
+您还可以在 `twikoo.init` 时传入自定义 katex 配置，详细配置请查看 [Katex Auto-render Extension](https://katex.org/docs/autorender.html)。
+
+``` js
+twikoo.init({
+  envId: '您的环境id',
+  el: '#tcomment',
+  katex: {
+    delimiters: [
+      { left: '$$', right: '$$', display: true },
+      { left: '$', right: '$', display: false },
+      { left: '\\(', right: '\\)', display: false },
+      { left: '\\[', right: '\\]', display: true }
+    ],
+    throwOnError: false
+  }
+});
+```
+
+## 如何配置反垃圾？
+
+### 使用腾讯云内容安全服务
+
+Twikoo 支持接入腾讯云文本内容检测，使用深度学习技术，识别涉黄、涉政、涉恐等有害内容，同时支持用户配置词库，打击自定义的违规文本。
+
+腾讯云文本内容检测是付费服务，提供 1 个月的免费试用，之后价格为 25 元/万条。如果您对反垃圾评论要求不高，也可以使用免费的 Akismet。
+
+如何申请腾讯云文本内容检测
+
+1. 访问[腾讯云控制台-文本内容安全](https://console.cloud.tencent.com/cms/text/overview)，开通文本内容安全服务
+2. 访问[腾讯云控制台-用户列表](https://console.cloud.tencent.com/cam)，点击新建用户，点击快速创建
+3. 输入用户名，访问方式选择“编程访问”，用户权限取消“AdministratorAccess”，只勾选“QcloudCMSFullAccess”
+4. 点击“创建用户”
+5. 复制“成功新建用户”页面的“SecretId”和“SecretKey”，到 Twikoo 管理面板“反垃圾”模块中配置
+6. 测试反垃圾效果
+
+成功后，站长可以在[腾讯云控制台-自定义库管理](https://console.cloud.tencent.com/cms/text/lib)配置自定义文本内容过滤。
+
+### 使用 Akismet 反垃圾服务
+
+Akismet (Automattic Kismet) 是应用广泛的一个垃圾留言过滤系统，其作者是大名鼎鼎的 WordPress 创始人 Matt Mullenweg，Akismet 也是 WordPress 默认安装的插件，其使用非常广泛，设计目标便是帮助博客网站来过滤垃圾留言。
+
+1. 注册 [akismet.com](https://akismet.com)
+2. 选择 Akismet Personal 订阅，复制得到的 Akismet API Key，到 Twikoo 管理面板“反垃圾”模块中配置
+
+### 如何测试 Akismet 反垃圾配置是否生效？
+
+请填写 `viagra-test-123` 作为昵称，或填写 `akismet-guaranteed-spam@example.com` 作为邮箱，发表评论，这条评论将一定会被视为垃圾评论。
+
+需要注意的是，由于 Akismet 服务响应速度较慢（大约 6 秒），影响用户体验，Twikoo 采取 “先放行，后检测” 的策略，垃圾评论会在发表后短暂可见。
+
+## 登录管理面板遇到错误 AUTH_INVALID_CUSTOM_LOGIN_TICKET
+
+一般是配置好登录私钥之后，又重新下载了登录私钥，导致之前配置的登录私钥失效了。<br>
+解决方法：到[云开发控制台](https://console.cloud.tencent.com/tcb/database/collection/config)，数据库，删掉 config，然后重新配置私钥。
+
+## 收不到提醒邮件？
+
+如果是 Vercel 部署的云函数，请配置国外邮件服务商，避免被邮件服务商判定为垃圾邮件行为。如果是其他原因，请前往 Twikoo 管理面板，找到邮件测试功能，输入个人邮箱，根据测试结果排查原因。
+
+为了避免频繁检查邮箱带来的性能问题，邮件配置有 10 分钟左右的缓存，如果确定配置没有问题，但测试失败，可以等待 10 分钟后再测试。
+
+由于博主发表评论时，不会通知博主，如果您想实际测试通知功能，请注销管理面板后用非博主邮箱发表或回复评论。
+
+## Vercel、私有部署无法上传图片？
+
+腾讯云环境自带云存储，所以腾讯云环境下可以直接上传图片，图片保存在云存储中。然而 Vercel 环境没有，上传图片功能依赖第三方图床，请在管理面板中配置图床，Twikoo 支持以下图床：
+
+| 图床 | 地址 | 特点 |
+| ---- | ---- | ---- |
+| qcloud | 无 | 腾讯云环境自带，可在云开发 - 云存储中查看 |
+| 7bu | https://7bu.top | 去不图床，由杜老师提供支持，无免费套餐 |
+| smms | https://sm.ms | SMMS 图床，有免费套餐，请自行注册账号，`IMAGE_CDN_TOKEN` 可在 [Dashboard](https://sm.ms/home/apitoken) 中获取 |
+| [lsky-pro](https://www.lsky.pro) | 私有部署 | 兰空图床 2.0 版本，`IMAGE_CDN` 请配置图床首页 URL 地址（如 `https://7bu.top`），`IMAGE_CDN_TOKEN` 获取方式请参考教程 [杜老师说图床：新版本去不图床 Token 的获取与清空](https://dusays.com/454/)，获取到的 token 格式应为 `1\|1bJbwlqBfnggmOMEZqXT5XusaIwqiZjCDs7r1Ob5`） |
+
+## 私有部署能连接自己的数据库吗？
+
+不能。私有部署不需要连接外部数据库，数据存储在启动 twikoo 时所在目录下的 data 目录，您可以直接复制该目录以完成数据备份。
+
+twikoo 私有部署版使用内置数据库。如果连接外部数据库，会增加部署难度，导致诸如 _连接字符串不会配置、服务器内存不足、数据库版本不兼容、高 ping、连接不稳定_ 等麻烦事。
+
+twikoo 内置的数据库为 LokiJS 数据库，支持的数据库容量大约为 1 GB。
+
+# 配置
+
+::: warning 注意
+**因图形化配置界面已上线，此文档已废弃且不再维护，其中的内容可能已经过时**
+
+* 配置是可选的，即使没有配置也可以使用。
+* 请确保 config 表的权限**不是**“所有用户可读”，以保证 SMTP 密码等信息不会泄露。<br>
+不过放心，默认权限是安全的，您不需要更改。
+* 请将配置项放在一条数据记录中。
+:::
+
+## 通用
+
+### SITE_NAME
+
+类型: `String`<br>
+默认值: `null`<br>
+必要性: `false`<br>
+示例: 虹墨空间站
+
+博客、站点名称。
+
+### SITE_URL
+
+类型: `String`<br>
+默认值: `null`<br>
+必要性: `false`<br>
+示例: https://www.imaegoo.com
+
+博客、站点地址。
+
+### BLOGGER_EMAIL
+
+类型: `String`<br>
+默认值: `null`<br>
+必要性: `false`<br>
+示例: 12345@qq.com
+
+博主的邮箱地址，用于邮件通知、博主标识。
+
+## 反垃圾
+
+### AKISMET_KEY
+
+类型: `String`<br>
+默认值: `null`<br>
+必要性: `false`<br>
+示例: 8651783ed123
+
+反垃圾评论 API key。
+
+## 微信通知
+
+### SC_SENDKEY
+
+类型: `String`<br>
+默认值: `null`<br>
+必要性: `false`<br>
+示例: SCT1364TKdsiGjGvyAZNYDVnuHW12345
+
+[Server酱](https://sc.ftqq.com/3.version)微信推送的 `SCKEY`
+
+## 邮件通知
+
+### SENDER_EMAIL
+
+类型: `String`<br>
+默认值: `null`<br>
+必要性: `false`<br>
+示例: blog@imaegoo.com
+
+邮件通知邮箱地址。对于大多数邮箱服务商，`SENDER_EMAIL` 必须和 `SMTP_USER` 保持一致，否则无法发送邮件。
+
+### SENDER_NAME
+
+类型: `String`<br>
+默认值: `null`<br>
+必要性: `false`<br>
+示例: 虹墨空间站评论提醒
+
+邮件通知标题。
+
+### SMTP_SERVICE
+
+类型: `String`<br>
+默认值: `null`<br>
+必要性: `false`<br>
+示例: qiye.aliyun
+
+邮件通知邮箱服务商。<br>
+完整列表请参考：[Supported services](https://nodemailer.com/smtp/well-known/#supported-services)
+
+### SMTP_USER
+
+类型: `String`<br>
+默认值: `null`<br>
+必要性: `false`<br>
+示例: blog@imaegoo.com
+
+邮件通知邮箱用户名。
+
+### SMTP_PASS
+
+类型: `String`<br>
+默认值: `null`<br>
+必要性: `false`<br>
+示例: password
+
+邮件通知邮箱密码，QQ邮箱请填写授权码。
+
+# 反垃圾
+
+[如何配置反垃圾？](faq.html#如何配置反垃圾)
+
+# API 文档
+
+通过 Twikoo API，主题开发者可以实现一些特殊的功能，例如：在文章列表显示文章评论数，在首页显示最新评论，等。
+
+调用 Twikoo API 前，**不需要** 执行 `twikoo.init()`。
+
+## Get comments count
+
+批量获取文章评论数。
+
+### Version
+
+`>= 0.2.7`
+
+### Example
+
+``` js
+
+twikoo.getCommentsCount({
+
+  envId: '您的环境id', // 环境 ID
+
+  // region: 'ap-guangzhou', // 环境地域，默认为 ap-shanghai，如果您的环境地域不是上海，需传此参数
+
+  urls: [ // 不包含协议、域名、参数的文章路径列表，必传参数
+
+    '/2020/10/post-1.html',
+
+    '/2020/11/post-2.html',
+
+    '/2020/12/post-3.html'
+
+  ],
+
+  includeReply: false // 评论数是否包括回复，默认：false
+
+}).then(function (res) {
+
+  console.log(res);
+
+  // 返回示例: [
+
+  //   { url: '/2020/10/post-1.html', count: 10 },
+
+  //   { url: '/2020/11/post-2.html', count: 0 },
+
+  //   { url: '/2020/12/post-3.html', count: 20 }
+
+  // ]
+
+}).catch(function (err) {
+
+  // 发生错误
+
+  console.error(err);
+
+});
+
+```
+
+## Get recent comments
+
+获取最新评论。
+
+### Version
+
+`>= 0.2.7`
+
+### Example
+
+``` js
+
+twikoo.getRecentComments({
+
+  envId: '您的环境id', // 环境 ID
+
+  // region: 'ap-guangzhou', // 环境地域，默认为 ap-shanghai，如果您的环境地域不是上海，需传此参数
+
+  pageSize: 10, // 获取多少条，默认：10，最大：100
+
+  includeReply: false // 是否包括最新回复，默认：false
+
+}).then(function (res) {
+
+  console.log(res);
+
+  // 返回 Array，包含最新评论的
+
+  //   * id:           评论 ID
+
+  //   * url:          评论地址
+
+  //   * nick:         昵称
+
+  //   * mailMd5:      邮箱的 MD5 值，可用于展示头像
+
+  //   * link:         网址
+
+  //   * comment:      HTML 格式的评论内容
+
+  //   * commentText:  纯文本格式的评论内容
+
+  //   * created:      评论时间，格式为毫秒级时间戳
+
+  //   * avatar:       头像地址（0.2.9 新增）
+
+  //   * relativeTime: 相对评论时间，如 “1 小时前”（0.2.9 新增）
+
+  // 返回示例: [ // 从新到旧顺序
+
+  //   { id: '', url: '', nick: '', mailMd5: '', link: '', comment: '', commentText: '', created: 0 },
+
+  //   { id: '', url: '', nick: '', mailMd5: '', link: '', comment: '', commentText: '', created: 0 },
+
+  //   { id: '', url: '', nick: '', mailMd5: '', link: '', comment: '', commentText: '', created: 0 }
+
+  // ]
+
+}).catch(function (err) {
+
+  // 发生错误
+
+  console.error(err);
+
+});
+
+```
+
+## On Twikoo loaded
+
+Twikoo 成功挂载后的回调函数。<br>
+
+环境 ID 错误、网络异常、挂载失败等情况时不会触发。
+
+### Version
+
+`>= 0.5.2`
+
+### Example
+
+``` js
+
+twikoo.init({
+
+  ......
+
+}).then(function () {
+
+  console.log('Twikoo 加载完成');
+
+});
+
+```
+
+## On comment loaded
+
+评论加载成功后的回调函数。<br>
+
+发表评论后自动刷新评论时、加载下一页评论时，也会触发。<br>
+
+评论加载失败时不会触发。
+
+### Version
+
+`>= 0.5.2`
+
+### Example
+
+``` js
+
+twikoo.init({
+
+  ......,
+
+  onCommentLoaded: function () {
+
+    console.log('评论加载完成');
+
+  }
+
+});
+
+```
